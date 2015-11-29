@@ -1,0 +1,174 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+    <ui:composition template="/templates/template.xhtml">
+        <ui:define name="titulo">
+            Manutenção de Contratos
+        </ui:define>
+        <ui:define name="conteudo">
+            <h:form id="formListagem" prependId="false">
+                <p:growl/>
+                <p:commandButton value="Novo Contrato"
+                                 actionListener="#{controleContrato.novo()}"
+                                 update=":formEdicao"
+                                 process="@form"
+                                 oncomplete="PF('dlg').show();"/>
+                <p:dataTable value="#{controleContrato.dao.listarTodos}"
+                             var="obj">
+                    <f:facet name="footer">
+                        <div align="center">
+                            <p:outputLabel value="Total de registros: #{controleContrato.dao.listarTodos}"/>
+                        </div>
+                    </f:facet>
+                    <p:column headerText="ID">
+                        <p:outputLabel value="#{obj.id}"/>
+                    </p:column>
+                    <p:column headerText="Imóvel">
+                        <p:outputLabel value="#{obj.imovel.id}"/>
+                    </p:column>
+                    <p:column headerText="Valor">
+                        <p:outputLabel value="#{obj.valor_aluguel}"/>
+                    </p:column> 
+                    <p:column headerText="Locatário">
+                        <p:outputLabel value="#{obj.locatario.nomeString}"/>
+                    </p:column>    
+                    <p:column headerText="Ações">
+                        <div align="center">
+                            <p:commandButton icon="ui-icon-pencil"
+                                             action="#{controleContrato.editar(obj.id)}"
+                                             oncomplete="PF('dlg').show();"
+                                             update=":formEdicao"
+                                             process="@form"/>
+                            <p:commandButton icon="ui-icon-trash"
+                                             action="#{controleContrato.remover(obj.id)}"
+                                             update="@form" process="@form"
+                                             onclick="if (!confirm('Confirma a exclusão do objeto?'))
+                                                         return false"/>                            
+                        </div>
+                    </p:column>
+                </p:dataTable>
+
+            </h:form>
+        </ui:define>
+        <ui:define name="dialogos">
+            <p:dialog header="Edição" widgetVar="dlg"
+                      resizable="false" modal="true" width="550" height="480">
+                <h:form id="formEdicao" prependId="false">
+                    <p:growl id="growl"/>
+
+                    <p:tabView id="tab">
+                        <p:tab title="Dados Principais">  
+                            <div align="center">
+                                <p:panelGrid columns="2">
+                                    <f:facet name="footer">
+                                        <div align="center">
+                                            <p:commandButton actionListener="#{controleContrato.salvar()}"
+                                                             update=":formListagem :formEdicao"
+                                                             value="Salvar"
+                                                             icon="ui-icon-disk"
+                                                             oncomplete="if (!args.validationFailed) {PF('dlg').hide();}"/>
+                                        </div>                            
+                                    </f:facet>
+                                    <p:outputLabel value="ID"/>
+                                    <p:inputText value="#{controleContrato.objeto.id}" readonly="true" size="5"/>
+                                    
+                                    <h:outputLabel value="Locatário" for="campoLocatario"/>
+                                    <h:panelGroup>
+                                        <p:inputText value="#{controleContrato.objeto.locatario.nomeString}"
+                                                     readonly="true" id="campoLocatario"/>
+
+                                        <p:commandButton value="Físico"
+                                                         actionListener="#{controleContrato.daoPessoaFisica.listarTodos}"
+                                                         oncomplete="PF('dlgSelecionarPessoaFisica').show();"/>
+                                        <p:commandButton value="Jurídico"
+                                                         actionListener="#{controleContrato.daoPessoaJuridica.listarTodos}"
+                                                         oncomplete="PF('dlgSelecionarPessoaJuridica').show();"/>
+                                    </h:panelGroup>
+
+                                    <p:outputLabel value="Imóvel" for="selectImovel"/>
+                                    <p:selectOneMenu value="#{controleContrato.objeto.imovel}"
+                                                     id="selectImovel">
+                                        <f:converter converterId="converterImovel"/>
+                                        <f:selectItems value="#{controleContrato.daoImovel.listarTodos}" 
+                                                       var="im"
+                                                       itemLabel="#{im.id}"/>
+                                    </p:selectOneMenu>
+
+                                    <p:outputLabel value="Indice" for="selectIndice"/>
+                                    <p:selectOneMenu value="#{controleContrato.objeto.indice}"
+                                                     id="selectIndice">
+                                        <f:converter converterId="converterIndice"/>
+                                        <f:selectItems value="#{controleContrato.daoIndice.listarTodos}" 
+                                                       var="i"
+                                                       itemLabel="#{i.nome}"/>
+                                    </p:selectOneMenu>
+                                     
+                                    <p:outputLabel value="Valor Aluguel" for="txtValor"/>
+                                    <p:inputText value="#{controleContrato.objeto.valor_aluguel}" id="txtValor"
+                                                 size="14"
+                                                 onkeydown="Mascara(this, Valor);"
+                                                 onkeypress="Mascara(this, Valor);"
+                                                 onkeyup="Mascara(this, Valor);" />
+                                    
+                                    <p:outputLabel value="Data Inicio" for="txtDataInicio"/>
+                                    <p:calendar value="#{controleContrato.objeto.data_inicio}"
+                                                id="txtDataInicio"
+                                                mask="true" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    
+                                    <p:outputLabel value="Data Encerramento" for="txtDataEncerramento"/>
+                                    <p:calendar value="#{controleContrato.objeto.data_encerramento}"
+                                                id="txtDataEncerramento"
+                                                mask="true" pattern="dd/MM/yyyy" navigator="true">
+                                        <f:converter converterId="converterCalendar"/>
+                                    </p:calendar>
+                                    
+                                    <p:outputLabel value="Observação" for="edtObservacao"/>
+                                    <p:editor id="edtObservacao" 
+                                              value="#{controleContrato.objeto.observacao}" width="350" height="150" />
+                                </p:panelGrid>
+                            </div>                             
+                        </p:tab>
+                    </p:tabView>
+                </h:form>         
+            </p:dialog>
+           
+            <p:dialog header="Escolha Pessoa Fisica" widgetVar="dlgSelecionarPessoaFisica"
+                      resizable="false" modal="true" width="300">
+                <h:form id="formFisico" prependId="false">
+                    <p:dataTable value="#{controleContrato.daoPessoaFisica.listarTodos}" var="pf">
+                        <p:column headerText="Nome">
+                            <p:outputLabel value="#{pf.nome}"/>
+                        </p:column>
+                        <p:column headerText="Selecionar">
+                            <p:commandButton value="Selecionar" actionListener="#{controleContrato.definirPF(pf)}"
+                                             oncomplete="PF('dlgSelecionarPessoaFisica').hide();"
+                                             update=":formEdicao:tab:campoLocatario"/>
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+            <p:dialog header="Escolha Pessoa Jurídica" widgetVar="dlgSelecionarPessoaJuridica"
+                      resizable="false" modal="true" width="300">
+                <h:form id="formJuridico" prependId="false">
+                    <p:dataTable value="#{controleContrato.daoPessoaJuridica.listarTodos}" var="pj">
+                        <p:column headerText="Nome">
+                            <p:outputLabel value="#{pj.nome}"/>
+                        </p:column>
+                        <p:column headerText="Selecionar">
+                            <p:commandButton value="Selecionar" actionListener="#{controleContrato.definirPJ(pj)}"
+                                             oncomplete="PF('dlgSelecionarPessoaJuridica').hide();"
+                                             update=":formEdicao:tab:campoLocatario"/>
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </p:dialog>
+
+        </ui:define>
+    </ui:composition>
+</html>
